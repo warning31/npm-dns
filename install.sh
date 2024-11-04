@@ -102,7 +102,7 @@ _docketcomposekur() {
 _dockercomposeymlolustur() {
     echo  "Dockercompose yml Olusturluyor" 1>&3
     cat <<EOF >/opt/npm/docker-compose.yml
-version: '3.1'
+version: '3.8'
 
 services:
   mysql:
