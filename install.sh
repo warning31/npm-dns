@@ -102,43 +102,64 @@ _docketcomposekur() {
 _dockercomposeymlolustur() {
     echo  "Dockercompose yml Olusturluyor" 1>&3
     cat <<EOF >/opt/npm/docker-compose.yml
-version: '3.8'
-services:
-  app:
-    image: 'jc21/nginx-proxy-manager'
-    restart: unless-stopped
-    ports:
-      # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
-      # Add any other Stream port you want to expose
-      # - '21:21' # FTP
-    environment:
-      # Mysql/Maria connection parameters:
-      DB_MYSQL_HOST: "db"
-      DB_MYSQL_PORT: 3306
-      DB_MYSQL_USER: "npm"
-      DB_MYSQL_PASSWORD: "npm"
-      DB_MYSQL_NAME: "npm"
-      # Uncomment this if IPv6 is not enabled on your host
-      # DISABLE_IPV6: 'true'
-    volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
-    depends_on:
-      - db
+version: '3.1'
 
-  db:
-    image: 'jc21/mariadb-aria'
-    restart: unless-stopped
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: powerdns-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: 'npm'
-      MYSQL_DATABASE: 'npm'
-      MYSQL_USER: 'npm'
-      MYSQL_PASSWORD: 'npm'
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: powerdns
+      MYSQL_USER: powerdns
+      MYSQL_PASSWORD: powerdnspassword
     volumes:
-      - ./mysql:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: always
+
+  powerdns:
+    image: psitrax/powerdns:latest
+    container_name: powerdns
+    environment:
+      PDNS_gmysql_host: mysql
+      PDNS_gmysql_user: powerdns
+      PDNS_gmysql_password: powerdnspassword
+      PDNS_gmysql_dbname: powerdns
+      PDNS_api: 'yes'
+      PDNS_api_key: your_api_key
+      PDNS_webserver: 'yes'
+      PDNS_webserver_address: '0.0.0.0'
+      PDNS_webserver_port: 8081
+    depends_on:
+      - mysql
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "8081:8081"
+      - "91.107.237.246:53:53/udp"
+      - "91.107.237.246:53:53/tcp"
+    restart: always
+
+  poweradmin:
+    image: mbentley/poweradmin:latest
+    container_name: poweradmin
+    environment:
+      DBHOST: mysql
+      DBNAME: powerdns
+      DBUSER: powerdns
+      DBPASS: powerdnspassword
+    depends_on:
+      - mysql
+    ports:
+      - "8080:80"
+      - "91.107.237.246:80:8080"
+    restart: always
+
+volumes:
+  mysql_data:
+
 EOF
     
     echo "Dockercompose yml Olusturuldu" 1>&3
