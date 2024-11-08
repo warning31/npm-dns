@@ -122,7 +122,7 @@ options {
         8.8.4.4;
         1.1.1.1;
     };
-    recursion yes;
+    recursion no;
 };
 EOF'
     echo "Bind Conf Ayarlari Yapildi" 1>&3
