@@ -35,23 +35,23 @@ cat <<EOL | sudo tee "$zone_file"
                   86400 )    ; Minimum TTL
 
 ; NS kayıtları
-@    IN    NS    ns1.${domain}.
-@    IN    NS    ns2.${domain}.
+@    86400 IN    NS    ns1.${domain}.
+@    86400 IN    NS    ns2.${domain}.
 
 ; A kayıtları
-@    IN    A     ${ip_address}
-ns1  IN    A     ${ip_address}
-ns2  IN    A     ${ip_address}
-mail IN    A     ${ip_address}
+@    86400 IN    A     ${ip_address}
+ns1  86400 IN    A     ${ip_address}
+ns2  86400 IN    A     ${ip_address}
+mail 86400 IN    A     ${ip_address}
 
 ; CNAME kaydı
-www  IN    CNAME @
+www  86400 IN    CNAME @
 
 ; MX kaydı
-@    IN    MX    10 mail.${domain}.
+@    86400 IN    MX    10 mail.${domain}.
 
 ; SSL doğrulama için rastgele oluşturulmuş TXT kaydı
-_acme-challenge IN TXT "${verification_code}"
+_acme-challenge 86400 IN TXT "${verification_code}"
 EOL
 
 # named.conf.local ve zone dosyası için yapılandırma kontrolü
