@@ -8,7 +8,7 @@ main() {
 
     printf "\033c"
 
-    echo  "NPM Kurulumuna Hosgeldiniz"
+    echo  "NPM-DNS Kurulumuna Hosgeldiniz"
     echo
 
     sleep 5
@@ -27,15 +27,17 @@ main() {
 
     _repoekleniyor
 
-    _dockerkuruluyor
+    _paketlerkuruluyor
+
+    _bindayar
 
     _docketcomposekur
 
-    _dockercomposeymlolustur
+    #_dockercomposeymlolustur
 
-    _npminstall
+    #_npminstall
     
-    _clean
+    #_clean
 
 if $(YesOrNo "Sunucuyu Yeniden Baslat"); then
         1>&3
@@ -50,7 +52,7 @@ if $(YesOrNo "Sunucuyu Yeniden Baslat"); then
 
 _updateyapiliyor() {
     echo  "Sistem update Yapiliyor" 1>&3
-    apt-get install -y dialog whiptail nano
+    apt-get install -y dialog whiptail nano wget
     apt-get -y update
     apt -y update
     apt-get -y upgrade
@@ -62,7 +64,7 @@ _updateyapiliyor() {
 _paketlerikaldir() {
     echo  "Paketler Kaldiriliyor" 1>&3
     apt-get update
-    apt-get  -y remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    apt-get  -y remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin bind9 bind9utils bind9-doc dnsutils
     echo  "Paketler Kaldirildi" 1>&3
 
 }
@@ -84,82 +86,92 @@ _repoekleniyor() {
 
 }
 
-_dockerkuruluyor() { 
+_paketlerkuruluyor() { 
     echo  "Docker Kuruluyor" 1>&3
       apt-get update
-      apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin bind9 bind9utils bind9-doc dnsutils
     echo  "Docker Kuruldu" 1>&3
 }
 
 _docketcomposekur() {
     echo  "Docker Compose Kuruluyor" 1>&3
-   curl -L "https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+   curl -L "https://github.com/docker/compose/releases/download/v2.30.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
    chmod +x /usr/local/bin/docker-compose
    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
     echo "Docker Compose Kuruldu" 1>&3
 }
 
+
+_bindayar() {
+    echo  "Bind Baslangic Ayarlari Yapılıyor" 1>&3
+    sudo systemctl start named
+    sudo systemctl enable named
+    echo  "Bind Baslangic Ayarlari Yapildi" 1>&3
+
+    echo  "Bind Conf Ayarlari Yapiliyor" 1>&3
+    mv /etc/bind/named.conf.options /etc/bind/named.conf.optionsyedek
+
+    sudo bash -c 'cat > /etc/bind/named.conf.options <<EOF
+options {
+    directory "/var/cache/bind";
+    auth-nxdomain no;
+    listen-on port 53 { localhost; };
+    allow-query { localhost;};
+     forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    1.1.1.1;
+    };
+    recursion yes;
+};
+EOF'
+    echo "Bind Conf Ayarlari Yapildi" 1>&3
+    echo "Bind Conf Kontrol Ediliyor" 1>&3
+    sudo named-checkconf
+    echo "Bind Conf Kontrol Edildi" 1>&3
+}
+
+
 _dockercomposeymlolustur() {
     echo  "Dockercompose yml Olusturluyor" 1>&3
     cat <<EOF >/opt/npm/docker-compose.yml
 version: '3.8'
-
 services:
-  mysql:
-    image: mysql:5.7
-    container_name: powerdns-mysql
+  app:
+    image: 'jc21/nginx-proxy-manager'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: powerdns
-      MYSQL_USER: powerdns
-      MYSQL_PASSWORD: powerdnspassword
+      # Mysql/Maria connection parameters:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "npm"
+      DB_MYSQL_NAME: "npm"
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
     volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    restart: always
-
-  powerdns:
-    image: psitrax/powerdns:latest
-    container_name: powerdns
-    environment:
-      PDNS_gmysql_host: mysql
-      PDNS_gmysql_user: powerdns
-      PDNS_gmysql_password: powerdnspassword
-      PDNS_gmysql_dbname: powerdns
-      PDNS_api: 'yes'
-      PDNS_api_key: your_api_key
-      PDNS_webserver: 'yes'
-      PDNS_webserver_address: '0.0.0.0'
-      PDNS_webserver_port: 8081
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
     depends_on:
-      - mysql
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
-      - "8081:8081"
-      - "91.107.237.246:53:53/udp"
-      - "91.107.237.246:53:53/tcp"
-    restart: always
+      - db
 
-  poweradmin:
-    image: mbentley/poweradmin:latest
-    container_name: poweradmin
+  db:
+    image: 'jc21/mariadb-aria'
+    restart: unless-stopped
     environment:
-      DBHOST: mysql
-      DBNAME: powerdns
-      DBUSER: powerdns
-      DBPASS: powerdnspassword
-    depends_on:
-      - mysql
-    ports:
-      - "8080:80"
-      - "91.107.237.246:80:8080"
-    restart: always
-
-volumes:
-  mysql_data:
-
+      MYSQL_ROOT_PASSWORD: 'npm'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: 'npm'
+    volumes:
+      - ./mysql:/var/lib/mysql
 EOF
     
     echo "Dockercompose yml Olusturuldu" 1>&3
