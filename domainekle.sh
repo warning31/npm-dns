@@ -21,8 +21,8 @@ fi
 # Zone dosyasını oluştur
 sudo touch "$zone_file"
 
-# Rastgele doğrulama kodu oluştur
-verification_code=$(uuidgen)
+# Rastgele doğrulama kodu oluştur (sadece harf ve rakamlarla)
+verification_code=$(openssl rand -hex 16)
 
 # Zone dosyasına temel DNS kayıtlarını ekleyin
 cat <<EOL | sudo tee "$zone_file"
