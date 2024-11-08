@@ -5,7 +5,7 @@ read -p "Domain adını girin (örneğin, example.com): " domain
 read -p "$domain için IP adresini girin: " ip_address
 
 # Zone dosyası yolu
-zone_file="/etc/bind/zone/db.${domain}"
+zone_file="/etc/bind/zone/${domain}.db"
 
 # named.conf.local dosyasına zone tanımı ekleyin
 echo "zone \"${domain}\" {" | sudo tee -a /etc/bind/named.conf.local
@@ -27,7 +27,7 @@ verification_code=$(uuidgen)
 # Zone dosyasına temel DNS kayıtlarını ekleyin
 cat <<EOL | sudo tee "$zone_file"
 \$TTL 86400
-@    IN    SOA   ns1.${domain}. admin.${domain}. (
+@    IN    SOA   ns1.${domain}. hostmaster.${domain}. (
                   2023110801 ; Seri numarası
                   3600       ; Refresh
                   1800       ; Retry
