@@ -40,9 +40,15 @@ cat <<EOL | sudo tee "$zone_file"
 
 ; A kayıtları
 @    IN    A     ${ip_address}
-www  IN    A     ${ip_address}
 ns1  IN    A     ${ip_address}
 ns2  IN    A     ${ip_address}
+mail IN    A     ${ip_address}
+
+; CNAME kaydı
+www  IN    CNAME @
+
+; MX kaydı
+@    IN    MX    10 mail.${domain}.
 
 ; SSL doğrulama için rastgele oluşturulmuş TXT kaydı
 _acme-challenge IN TXT "${verification_code}"

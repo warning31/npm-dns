@@ -115,15 +115,17 @@ _bindayar() {
 options {
     directory "/var/cache/bind";
     auth-nxdomain no;
-    listen-on port 53 { localhost; };
-    allow-query { localhost;};
+    listen-on port 53 { any; };
+    allow-query { any;};
      forwarders {
         8.8.8.8;
         8.8.4.4;
-    1.1.1.1;
+        1.1.1.1;
     };
     recursion yes;
 };
+
+
 EOF'
     echo "Bind Conf Ayarlari Yapildi" 1>&3
     echo "Bind Conf Kontrol Ediliyor" 1>&3
