@@ -33,11 +33,11 @@ main() {
 
     _docketcomposekur
 
-    #_dockercomposeymlolustur
+    _dockercomposeymlolustur
 
-    #_npminstall
+    _npminstall
     
-    #_clean
+    _clean
 
 if $(YesOrNo "Sunucuyu Yeniden Baslat"); then
         1>&3
@@ -124,13 +124,15 @@ options {
     };
     recursion yes;
 };
-
-
 EOF'
     echo "Bind Conf Ayarlari Yapildi" 1>&3
     echo "Bind Conf Kontrol Ediliyor" 1>&3
     sudo named-checkconf
     echo "Bind Conf Kontrol Edildi" 1>&3
+    echo "Domain Ekleme Islmeleri" 1>&3
+    curl -L "https://raw.githubusercontent.com/warning31/npm-dns/refs/heads/main/domainekle.sh" -o /root/domainekle.sh
+    chmod +x /root/domainekle.sh
+    echo "Domain Ekleme Islmeleri Ayarlandi" 1>&3
 }
 
 
