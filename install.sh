@@ -144,7 +144,6 @@ services:
   app:
     image: 'jc21/nginx-proxy-manager'
     restart: unless-stopped
-    network_mode: host
     ports:
       # These ports are in format <host-port>:<container-port>
       - '80:80' # Public HTTP Port
