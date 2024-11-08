@@ -144,17 +144,16 @@ services:
   app:
     image: 'jc21/nginx-proxy-manager'
     restart: unless-stopped
-    network_mode: host
-    #ports:
+    ports:
       # These ports are in format <host-port>:<container-port>
-     # - '80:80' # Public HTTP Port
-     # - '443:443' # Public HTTPS Port
-      #- '81:81' # Admin Web Port
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
       # Add any other Stream port you want to expose
       # - '21:21' # FTP
     environment:
       # Mysql/Maria connection parameters:
-      DB_MYSQL_HOST: "localhost"
+      DB_MYSQL_HOST: "db"
       DB_MYSQL_PORT: 3306
       DB_MYSQL_USER: "npm"
       DB_MYSQL_PASSWORD: "npm"
